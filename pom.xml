@@ -20,7 +20,7 @@
 		<carina-azure.version>1.2.5</carina-azure.version>
 		<carina-appcenter.version>1.2.7</carina-appcenter.version>
 
-		<java.version>11</java.version>
+		<java.version>22</java.version>
 		<zebrunner-agent.version>1.9.8</zebrunner-agent.version>
 		<suite>helloWorld</suite>
 	</properties>
@@ -110,8 +110,14 @@
 			<artifactId>postgresql</artifactId>
 			<version>42.5.5</version>
 		</dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
 
-	</dependencies>
+    </dependencies>
 
 	<build>
 		<plugins>

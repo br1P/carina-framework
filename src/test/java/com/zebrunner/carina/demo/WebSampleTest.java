@@ -21,6 +21,7 @@ import java.util.List;
 import com.zebrunner.carina.demo.gui.components.ModelItem;
 import com.zebrunner.carina.demo.gui.components.NewsItem;
 import com.zebrunner.carina.demo.gui.components.compare.ModelSpecs;
+import myfitnesspal.objects.MFPUser;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
@@ -41,6 +42,11 @@ import com.zebrunner.agent.core.annotation.TestLabel;
 import com.zebrunner.carina.core.registrar.ownership.MethodOwner;
 import com.zebrunner.carina.core.registrar.tag.Priority;
 import com.zebrunner.carina.core.registrar.tag.TestPriority;
+import web.gui.BBCPage;
+import web.gui.InventoryPage;
+import web.gui.LoginPage;
+import web.gui.MercadoLibrePage;
+import web.objects.User;
 
 /**
  * This sample shows how create Web test.
@@ -49,267 +55,119 @@ import com.zebrunner.carina.core.registrar.tag.TestPriority;
  */
 public class WebSampleTest implements IAbstractTest {
 
-    @Test
-    @MethodOwner(owner = "qpsdemo")
-    @TestPriority(Priority.P3)
-    @TestLabel(name = "feature", value = { "web", "regression" })
-    public void testModelSpecs() {
-        // Open GSM Arena home page and verify page is opened
-        HomePageBase homePage = initPage(getDriver(), HomePageBase.class);
-        homePage.open();
-        Assert.assertTrue(homePage.isPageOpened(), "Home page is not opened");
-
-        // Select phone brand
-        BrandModelsPageBase productsPage = homePage.selectBrand("Samsung");
-        // Select phone model
-        ModelInfoPageBase productInfoPage = productsPage.selectModel("Galaxy A04");
-        // Verify phone specifications
-        SoftAssert softAssert = new SoftAssert();
-        softAssert.assertEquals(productInfoPage.readDisplay(), "6.5\"", "Invalid display info!");
-        softAssert.assertEquals(productInfoPage.readCamera(), "50MP", "Invalid camera info!");
-        softAssert.assertEquals(productInfoPage.readRam(), "3-8GB RAM", "Invalid ram info!");
-        softAssert.assertEquals(productInfoPage.readBattery(), "5000mAh", "Invalid battery info!");
-        softAssert.assertAll();
-    }
-
-    @Test
-    @MethodOwner(owner = "qpsdemo")
-    @TestPriority(Priority.P1)
-    @TestLabel(name = "feature", value = { "web", "acceptance" })
-    public void testCompareModels() {
-        // Open GSM Arena home page and verify page is opened
-        HomePageBase homePage = initPage(getDriver(), HomePageBase.class);
-        homePage.open();
-        Assert.assertTrue(homePage.isPageOpened(), "Home page is not opened");
-        // Open model compare page
-        CompareModelsPageBase comparePage = homePage.openComparePage();
-        // Compare 2 (for mobile testing) or 3 (for desktop testing) models
-        List<ModelSpecs> specs = comparePage.compareModels("Samsung Galaxy J3", "Samsung Galaxy S23 Ultra", "Samsung Galaxy J7 Pro");
-        // Verify model announced dates
-        SoftAssert softAssert = new SoftAssert();
-        softAssert.assertEquals(specs.get(0).readSpec(ModelSpecs.SpecType.ANNOUNCED), "2016, March 31. Released 2016, May 06");
-        softAssert.assertEquals(specs.get(0).readSpec(ModelSpecs.SpecType.TECHNOLOGY), "GSM / HSPA / LTE");
-        softAssert.assertEquals(specs.get(1).readSpec(ModelSpecs.SpecType.ANNOUNCED), "2023, February 29");
-        softAssert.assertEquals(specs.get(1).readSpec(ModelSpecs.SpecType.TECHNOLOGY), "GSM / CDMA / HSPA / EVDO / LTE / 5G");
-        // for desktop could be compared 3 devices, when for mobile only 2
-        if (specs.size() > 2) {
-            softAssert.assertEquals(specs.get(2).readSpec(ModelSpecs.SpecType.ANNOUNCED), "2017, June");
-            softAssert.assertEquals(specs.get(2).readSpec(ModelSpecs.SpecType.TECHNOLOGY), "GSM / HSPA / LTE");
-        }
-
-        softAssert.assertAll();
-    }
-
-    @Test
-    @MethodOwner(owner = "qpsdemo")
-    @TestLabel(name = "feature", value = { "web", "acceptance" })
-    public void testNewsSearch() {
-        HomePageBase homePage = initPage(getDriver(), HomePageBase.class);
-        homePage.open();
-        Assert.assertTrue(homePage.isPageOpened(), "Home page is not opened!");
-
-        NewsPageBase newsPage = homePage.getFooterMenu().openNewsPage();
-        Assert.assertTrue(newsPage.isPageOpened(), "News page is not opened!");
-
-        final String searchQ = "iphone";
-        List<NewsItem> news = newsPage.searchNews(searchQ);
-        Assert.assertFalse(CollectionUtils.isEmpty(news), "News not found!");
-        SoftAssert softAssert = new SoftAssert();
-        for (NewsItem n : news) {
-            System.out.println(n.readTitle());
-            softAssert.assertTrue(StringUtils.containsIgnoreCase(n.readTitle(), searchQ),
-                    "Invalid search results for " + n.readTitle());
-        }
-        softAssert.assertAll();
-    }
-
-    @Test()
-    @MethodOwner(owner = "qpsdemo")
-    @TestPriority(Priority.P3)
-    @TestLabel(name = "feature", value = { "web", "regression" })
-    public void testBrandGroup() {
-        HomePageBase homePage = initPage(getDriver(), HomePageBase.class);
-        homePage.open();
-        Assert.assertTrue(homePage.isPageOpened(), "Home page is not opened!");
-
-        AllBrandsPageBase allBrandsPage = homePage.openAllBrandsPage();
-        Assert.assertTrue(allBrandsPage.isPageOpened(), "All mobile phone brands page is not opened!");
-
-        final String brandName = "Lava";
-        BrandModelsPageBase brandModelsPage = allBrandsPage.selectBrand(brandName);
-        List<ModelItem> models = brandModelsPage.getModels();
-        SoftAssert softAssert = new SoftAssert();
-        for (ModelItem modelItem : models) {
-            softAssert.assertFalse(modelItem.readModel().contains(brandName),
-                    "Model " + modelItem.readModel() + " should not include brand " + brandName + " in title");
-        }
-
-        softAssert.assertAll();
-    }
 
     @Test
     @MethodOwner(owner = "bpruzsiani")
     @TestPriority(Priority.P1)
-    @TestLabel(name = "feature", value = { "web", "regression" })
+    @TestLabel(name = "feature", value = {"web", "regression"})
     public void testLogin() {
         getDriver().get("https://www.saucedemo.com/");
         Assert.assertEquals(getDriver().getTitle(), "Swag Labs", "Page did not open correctly");
 
+        User user = new User("standard_user", "secret_sauce");
 
-        WebElement usernameField = getDriver().findElement(By.id("user-name"));
-        WebElement passwordField = getDriver().findElement(By.id("password"));
-        WebElement loginButton = getDriver().findElement(By.id("login-button"));
-
-
-        usernameField.sendKeys("standard_user");
-        passwordField.sendKeys("secret_sauce");
-        loginButton.click(); //login
-
+        LoginPage loginPage = new LoginPage(getDriver());
+        loginPage.login(user.getUsername(), user.getPassword());
 
         String currentUrl = getDriver().getCurrentUrl();
-        Assert.assertTrue(currentUrl.contains("inventory.html"), "login failed");
+        Assert.assertTrue(currentUrl.contains("inventory.html"), "Login failed");
+
+        InventoryPage inventoryPage = new InventoryPage(getDriver());
+        inventoryPage.logout();
 
 
-        WebElement menuButton = getDriver().findElement(By.id("react-burger-menu-btn"));
-        menuButton.click();
-        WebElement logoutLink = getDriver().findElement(By.id("logout_sidebar_link"));
-        logoutLink.click(); //we log out
-
-
-        Assert.assertTrue(getDriver().findElement(By.id("login-button")).isDisplayed(), "login failed, didnt find button");
+        Assert.assertTrue(loginPage.isLoginButtonDisplayed(), "Logout failed, login button not found");
     }
 
     @Test
     @MethodOwner(owner = "bpruzsiani")
     @TestPriority(Priority.P2)
-    @TestLabel(name = "feature", value = { "web", "regression" })
+    @TestLabel(name = "feature", value = {"web", "regression"})
     public void testLoginWithInvalidData() {
         getDriver().get("https://www.saucedemo.com/");
-        Assert.assertEquals(getDriver().getTitle(), "Swag Labs", "page did not open correctly");
+        Assert.assertEquals(getDriver().getTitle(), "Swag Labs", "Page did not open correctly");
 
-        WebElement usernameField = getDriver().findElement(By.id("user-name"));
-        WebElement passwordField = getDriver().findElement(By.id("password"));
-        WebElement loginButton = getDriver().findElement(By.id("login-button"));
+        User invalidUser = new User("invalid_user", "wrong_password");
 
+        LoginPage loginPage = new LoginPage(getDriver());
+        loginPage.login(invalidUser.getUsername(), invalidUser.getPassword());
 
-        usernameField.sendKeys("invalid_user");
-        passwordField.sendKeys("wrong_password");
-        loginButton.click();
-
-
-        WebElement errorMessage = getDriver().findElement(By.cssSelector(".error-message-container"));
-        Assert.assertTrue(errorMessage.isDisplayed(), "Did not show error message");
-        Assert.assertTrue(errorMessage.getText().contains("Username and password do not match"),
-                "error message is not correct");
+        Assert.assertTrue(loginPage.isErrorMessageDisplayed(), "Did not show error message");
+        Assert.assertTrue(loginPage.getErrorMessageText().contains("Username and password do not match"), "Error message is not correct");
     }
+
 
     @Test
     @MethodOwner(owner = "bpruzsiani")
     @TestPriority(Priority.P3)
-    @TestLabel(name = "feature", value = { "web", "regression" })
+    @TestLabel(name = "feature", value = {"web", "regression"})
     public void testPageScroll() {
         WebDriver driver = getDriver();
-        driver.get("https://www.mercadolibre.com.ar/");
+        BBCPage bbcPage = new BBCPage(driver);
 
+        bbcPage.openPage();
 
-        Assert.assertTrue(driver.getTitle().contains("Mercado Libre"), "Page did not load succesfully");
+        Assert.assertTrue(bbcPage.isTitleCorrect(), "Page did not load successfully");
 
-
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("window.scrollBy(0, 500)", "");
-
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        WebElement loadedContent = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("article")));
-
+        bbcPage.scrollPage(0, 500);
+        WebElement loadedContent = bbcPage.waitForContentToLoad();
 
         SoftAssert softAssert = new SoftAssert();
-        softAssert.assertTrue(loadedContent.isDisplayed(), "Content did not load correctly after scrolling");
+        softAssert.assertTrue(bbcPage.isContentDisplayed(loadedContent), "Content did not load correctly after scrolling");
 
-
-        js.executeScript("window.scrollBy(0, 1000)", "");
-
-
-        WebElement moreContent = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("article")));
-        softAssert.assertTrue(moreContent.isDisplayed(), "Content did not load correctly after scrolling");
+        bbcPage.scrollPage(0, 1000);
+        WebElement moreContent = bbcPage.waitForContentToLoad();
+        softAssert.assertTrue(bbcPage.isContentDisplayed(moreContent), "Content did not load correctly after further scrolling");
 
         softAssert.assertAll();
     }
 
     @Test(description = "Validating search input field redirection in Mercado Libre")
     public void searchInputTest() {
-        WebDriver driver = getDriver();
+        MercadoLibrePage mercadoLibrePage = new MercadoLibrePage(getDriver());
 
+        mercadoLibrePage.openPage("https://listado.mercadolibre.com.ar/");
 
-        driver.get("https://listado.mercadolibre.com.ar/");
+        mercadoLibrePage.acceptCookies();
 
-        try {
-            WebElement cookiesButton = driver.findElement(By.id("accept-cookies"));
-            if (cookiesButton.isDisplayed()) {
-                cookiesButton.click();
-            }
-        } catch (NoSuchElementException e) {
-            System.out.println("No cookies acceptance button found.");
-        }
+        mercadoLibrePage.searchFor("laptops");
 
+        Assert.assertTrue(mercadoLibrePage.isResultsHeaderDisplayed(), "Results header is not displayed.");
+        String resultsText = mercadoLibrePage.getResultsHeaderText();
+        Assert.assertTrue(resultsText.toLowerCase().contains("resultados"), "Result header text does not contain 'resultados'.");
 
-        WebElement searchField = driver.findElement(By.name("as_word"));
-        searchField.sendKeys("laptops");
-        WebElement searchButton = driver.findElement(By.xpath("//button[@type='submit' and contains(@class, 'nav-search-btn')]"));
-        searchButton.click();
-
-        new WebDriverWait(driver, Duration.ofSeconds(5))
-                .until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[@class='ui-search-search-result']/span[contains(@class, 'ui-search-search-result__quantity-results')]")));
-
-        String resultsText = driver.findElement(By.xpath("//div[@class='ui-search-search-result']/span[contains(@class, 'ui-search-search-result__quantity-results')]")).getText();
-        Assert.assertTrue(resultsText.contains("resultados"), "Result headers not found.");
-
-        List<WebElement> productTitles = driver.findElements(By.xpath("//span[@class='ui-search-item-title']"));
+        List<WebElement> productTitles = mercadoLibrePage.getProductTitles();
         SoftAssert softAssert = new SoftAssert();
         for (WebElement productTitle : productTitles) {
-            softAssert.assertTrue(productTitle.getText().toLowerCase().contains("laptop"),
-                    "product is not 'laptop': " + productTitle.getText());
+            softAssert.assertTrue(productTitle.getText().toLowerCase().contains("laptop"), "Product title does not contain 'laptop': " + productTitle.getText());
         }
+
         softAssert.assertAll();
     }
 
-    @Test
+    @Test(description = "Validate categories navigation and selection in Mercado Libre")
     public void testCategoriesAndSelectMultiple() {
+        MercadoLibrePage mercadoLibrePage = new MercadoLibrePage(getDriver());
 
-        WebDriver driver = getDriver();
-        driver.get("https://www.mercadolibre.com.ar/");
+        mercadoLibrePage.openPage("https://www.mercadolibre.com.ar/");
 
-
-        By categoriesLink = By.xpath("//a[@class='nav-menu-categories-link' and text()='Categorías']");
-
-
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        WebElement categoriesButton = wait.until(ExpectedConditions.elementToBeClickable(categoriesLink));
-
-        categoriesButton.click();
-
+        mercadoLibrePage.clickCategories();
 
         String[] categories = {"Inmuebles", "Supermercado", "Herramientas"};
 
+        SoftAssert softAssert = new SoftAssert();
+
         for (String category : categories) {
+            mercadoLibrePage.clickCategory(category);
 
-            By categoryLink = By.xpath("//a[contains(text(), '" + category + "')]");
+            String currentUrl = mercadoLibrePage.getCurrentUrl();
+            softAssert.assertTrue(currentUrl.toLowerCase().contains(category.toLowerCase()), "Did not redirect correctly to the category: " + category);
 
-
-            WebElement categoryButton = wait.until(ExpectedConditions.elementToBeClickable(categoryLink));
-
-
-            categoryButton.click();
-
-
-            String currentUrl = driver.getCurrentUrl();
-            Assert.assertTrue(currentUrl.toLowerCase().contains(category.toLowerCase()), //maybe softassert here ?
-                    "Did not redirect correctly to the category: " + category);
-
-
-            driver.navigate().back();
-            categoriesButton = wait.until(ExpectedConditions.elementToBeClickable(categoriesLink));
-            categoriesButton.click();
+            mercadoLibrePage.navigateBack();
+            mercadoLibrePage.clickCategories();
         }
+
+        softAssert.assertAll();
     }
 
     @Test
@@ -319,44 +177,32 @@ public class WebSampleTest implements IAbstractTest {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
         try {
-            // Paso 1: Navega a Bing e inicia sesión
+
             driver.get("https://www.bing.com");
 
-            // Localiza y hace clic en el botón "Iniciar sesión"
+
             WebElement signInButton = wait.until(ExpectedConditions.elementToBeClickable(By.id("id_s")));
             signInButton.click();
 
-            // Selecciona "Iniciar sesión con una cuenta personal"
-            WebElement personalAccountSignInButton = wait.until(ExpectedConditions.elementToBeClickable(
-                    By.cssSelector("a.b_toggle.b_imi[data-a='false'][data-p='W']")
-            ));
+            WebElement personalAccountSignInButton = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a.b_toggle.b_imi[data-a='false'][data-p='W']")));
             personalAccountSignInButton.click();
 
-            // Ingresa correo electrónico
+
             WebElement emailField = wait.until(ExpectedConditions.elementToBeClickable(By.name("loginfmt")));
-            emailField.sendKeys("brunopruzsiani@hotmail.com"); // Reemplaza con tu correo
+            emailField.sendKeys("");
 
             WebElement nextButton = wait.until(ExpectedConditions.elementToBeClickable(By.id("idSIButton9")));
             nextButton.click();
 
-            // Ingresa contraseña
             WebElement passwordField = wait.until(ExpectedConditions.elementToBeClickable(By.name("passwd")));
-            passwordField.sendKeys("budincapo"); // Reemplaza con tu contraseña
+            passwordField.sendKeys("");
 
             WebElement loginButton = wait.until(ExpectedConditions.elementToBeClickable(By.id("idSIButton9")));
             loginButton.click();
-
-            // Selecciona "No" en "Mantener sesión iniciada"
             WebElement noButton = wait.until(ExpectedConditions.elementToBeClickable(By.id("declineButton")));
             noButton.click();
 
-            // Paso 2: Realiza las búsquedas después de iniciar sesión
-            String[] searchKeywords = {
-                    "Carina Framework", "Automated Testing", "Selenium WebDriver",
-                    "Weather in my city", "President of the USA",
-                    "Movies at the cinema", "Football matches today",
-                    "Top 5 basketball players of all time"
-            };
+            String[] searchKeywords = {"Carina Framework", "Automated Testing", "Selenium WebDriver", "Weather in my city", "President of the USA", "Movies at the cinema", "Football matches today", "Top 5 basketball players of all time"};
 
             for (String keyword : searchKeywords) {
                 WebElement searchBox = wait.until(ExpectedConditions.elementToBeClickable(By.name("q")));
@@ -364,15 +210,12 @@ public class WebSampleTest implements IAbstractTest {
                 searchBox.sendKeys(keyword);
                 searchBox.submit();
 
-                // Espera resultados
                 wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(".b_algo")));
 
-                // Pausa antes de la próxima búsqueda
                 JavascriptExecutor js = (JavascriptExecutor) driver;
                 js.executeScript("window.scrollBy(0, 500)", "");
                 Thread.sleep(5000);
 
-                // Vuelve a la página principal
                 driver.get("https://www.bing.com");
             }
 
@@ -383,6 +226,72 @@ public class WebSampleTest implements IAbstractTest {
         }
     }
 
+    //WebDriver driver; // Asumiendo que tienes el WebDriver inicializado correctamente
+   // MFPUser user = new MFPUser("John Doe", "01/01/1990", 180, 75, "johndoe@example.com", "password123");
+
+//    @Test
+//    public void SignIn() {
+//      //  driver.get("https://www.myfitnesspal.com/es/account/login");
+//
+//        waitForElementVisible(By.xpath("//input[@name='name' and @placeholder='Nombre']"));
+//
+//
+//        WebElement nameField = driver.findElement(By.xpath("//input[@name='name' and @placeholder='Nombre']"));
+//        nameField.sendKeys(user.getName());
+//
+//        // Hacemos clic en el botón "Siguiente"
+//        clickNextButton();
+//
+//        // Hacemos clic en el botón "Perder peso"
+//        WebElement loseWeightButton = driver.findElement(By.xpath("//button[@value='lose_weight' and .//p[text()='Perder peso']]"));
+//        loseWeightButton.click();
+//
+//        // Hacemos clic en el botón "Siguiente"
+//        clickNextButton();
+//
+//        // Continuamos con el flujo de "Siguiente"
+//        for (int i = 0; i < 5; i++) {
+//            clickNextButton();
+//        }
+//
+//        // Seleccionamos el sexo masculino
+//        WebElement maleRadioButton = driver.findElement(By.xpath("//input[@name='sex' and @value='M']"));
+//        maleRadioButton.click();
+//
+//        // Ingresamos la fecha de nacimiento
+//        WebElement birthDateField = driver.findElement(By.id("cumpleaños"));
+//        birthDateField.sendKeys(user.getBirthDate());
+//
+//        // Hacemos clic en el botón "Siguiente"
+//        clickNextButton();
+//
+//        // Ingresamos la altura del usuario
+//        WebElement heightFeetField = driver.findElement(By.id("Altura (pies)"));
+//        heightFeetField.sendKeys(String.valueOf(user.getHeightFeet()));
+//
+//        // Ingresamos el peso actual del usuario
+//        WebElement weightField = driver.findElement(By.id("Peso actual"));
+//        weightField.sendKeys(String.valueOf(user.getWeight()));
+//
+//        // Calculamos el peso deseado y lo ingresamos
+//        WebElement desiredWeightField = driver.findElement(By.id("Peso deseado"));
+//        desiredWeightField.sendKeys(String.valueOf(user.getWeight() + 5));
+//
+//        // Hacemos clic en el botón "Siguiente" para completar el registro
+//        clickNextButton();
+//    }
+//
+//    // Función para esperar que un elemento esté visible
+//    private void waitForElementVisible(By locator) {
+//        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+//    }
+//
+//    // Función para hacer clic en el botón "Siguiente"
+//    private void clickNextButton() {
+//        WebElement nextButton = driver.findElement(By.xpath("//button[@class='MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-fullWidth css-ufjate']"));
+//        nextButton.click();
+//    }
 
 
 }
